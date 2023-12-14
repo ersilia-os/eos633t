@@ -1,39 +1,102 @@
-# imports
+#!/usr/bin/env python3
 import os
+import sys 
+
+from molecule_generation import load_model_from_directory
+from molecule_generation.utils.cli_utils import (
+    setup_logging,
+    supress_tensorflow_warnings,
+)
 import csv
-import sys
+import random
+import numpy as np
+from tqdm import tqdm
 from rdkit import Chem
-from rdkit.Chem.Descriptors import MolWt
+from rdkit.Chem import AllChem
+from rdkit import DataStructs
+from rdkit.Chem.Scaffolds import MurckoScaffold
 
-# parse arguments
-input_file = sys.argv[1]
-output_file = sys.argv[2]
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-# current file directory
-root = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.abspath(__file__))
+BLOCKS_LIST = os.path.join(ROOT, "..", "..", "checkpoints", "fragments_from_enamine.smi")
 
-# my model
-def my_model(smiles_list):
-    return [MolWt(Chem.MolFromSmiles(smi)) for smi in smiles_list]
+N_SAMPLES = 1000
 
 
-# read SMILES from .csv file, assuming one column with header
-with open(input_file, "r") as f:
-    reader = csv.reader(f)
-    next(reader)  # skip header
-    smiles_list = [r[0] for r in reader]
+def get_murcko_scaffold(smiles):
+    molecule = Chem.MolFromSmiles(smiles)
+    scaffold = MurckoScaffold.GetScaffoldForMol(molecule)
+    scaffold_smiles = Chem.MolToSmiles(scaffold)
+    return scaffold_smiles
 
-# run model
-outputs = my_model(smiles_list)
 
-#check input and output have the same lenght
-input_len = len(smiles_list)
-output_len = len(outputs)
-assert input_len == output_len
+def read_blocks():
+    blocks_list = []
+    with open(BLOCKS_LIST, "r") as f:
+        reader = csv.reader(f, delimiter="\t")
+        for r in reader:
+            blocks_list += [r[0]]
+    return blocks_list
 
-# write output in a .csv file
-with open(output_file, "w") as f:
-    writer = csv.writer(f)
-    writer.writerow(["value"])  # header
-    for o in outputs:
-        writer.writerow([o])
+def read_smiles(input_file):
+    smiles = []
+    with open(input_file, "r") as f:
+        reader = csv.reader(f)
+        next(reader)
+        for r in reader:
+            smiles += [r[0]]
+    print("These are the SMILES: ", smiles)
+    return smiles
+
+def tanimoto_calc(smi1, smi2):
+    mol1 = Chem.MolFromSmiles(smi1)
+    mol2 = Chem.MolFromSmiles(smi2)
+    fp1 = AllChem.GetMorganFingerprintAsBitVect(mol1, 3, nBits=2048)
+    fp2 = AllChem.GetMorganFingerprintAsBitVect(mol2, 3, nBits=2048)
+    s = round(DataStructs.TanimotoSimilarity(fp1, fp2), 3)
+    return s
+
+
+def scaffold_based_sampling(query_scaffold, blocks_list):
+    ROOT = os.path.dirname(os.path.abspath(__file__))
+    model_directory = os.path.abspath(os.path.join(ROOT,"..","..","checkpoints","MODEL_DIR"))
+    with load_model_from_directory(model_directory) as model:
+        row = model.encode([query_scaffold])
+        R = []
+        for _ in range(len(blocks_list)):
+            R += row
+        embeddings = np.array(R)
+        print(embeddings.shape)
+        decoded = model.decode(embeddings, scaffolds=blocks_list)
+    return decoded
+
+
+def main() -> None:
+    supress_tensorflow_warnings()
+    setup_logging()
+
+    blocks_list = read_blocks()
+	
+    input_file = sys.argv[1]
+    output_file = sys.argv[2]
+
+    smiles_list = read_smiles(input_file=input_file)
+    scaff_list = [get_murcko_scaffold(smi) for smi in smiles_list]
+
+    R = []
+    for smi in tqdm(scaff_list):
+        blocks_list_samp = random.sample(blocks_list, N_SAMPLES)
+        decoded = scaffold_based_sampling(smi, blocks_list_samp)
+        R += [decoded]
+    
+    with open(output_file, "w") as f:
+        writer = csv.writer(f)
+        header = ["cpd_{0}".format(i) for i in range(N_SAMPLES)]
+        writer.writerow(header)
+        for r in R:
+            writer.writerow(r)
+
+
+if __name__ == "__main__":
+    main()
