@@ -5,6 +5,7 @@ RUN pip install rdkit
 RUN pip install molecule-generation
 RUN pip install tensorflow==2.9.1
 RUN pip install numpy==1.23
+RUN conda install -c conda-forge xorg-libxrender xorg-libxtst
 
 WORKDIR /repo
 COPY . /repo
