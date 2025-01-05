@@ -92,7 +92,7 @@ def main() -> None:
     
     with open(output_file, "w") as f:
         writer = csv.writer(f)
-        header = ["cpd_{0}".format(i) for i in range(N_SAMPLES)]
+        header = ["smiles_{0}".format(str(i).zfill(3)) for i in range(N_SAMPLES)]
         writer.writerow(header)
         for r in R:
             writer.writerow(r)
