@@ -4,32 +4,43 @@
     "Status": "Ready",
     "Title": "Extending molecular scaffolds with building blocks",
     "Description": "MoLeR is a graph-based generative model that combines fragment-based and atom-by-atom generation of new molecules with scaffold-constrained optimization. It does not depend on generation history and therefore MoLeR is able to complete arbitrary scaffolds. The model has been trained on the GuacaMol dataset. Here we sample the 300k building blocks library from Enamine.",
-    "Mode": "Pretrained",
-    "Task": [
-        "Generative"
+    "Deployment": [
+        "Local"
     ],
+    "Source": "Local",
+    "Source Type": "External",
+    "Task": [
+        "Sampling"
+    ],
+    "Subtask": "Generation",
     "Input": [
         "Compound"
     ],
-    "Input Shape": "Single",
+    "Input Dimension": 1,
     "Output": [
         "Compound"
     ],
     "Output Type": [
-        "String"
+        "Compound"
     ],
-    "Output Shape": "List",
-    "Interpretation": "1000 new molecules are sampled for each input molecule, preserving its scaffold. ",
+    "Output Dimension": 100,
+    "Output Consistency": "Variable",
+    "Interpretation": "1000 new molecules are sampled for each input molecule, preserving its scaffold.",
     "Tag": [
         "Chemical graph model",
         "Compound generation"
     ],
+    "Publication Type": "Peer reviewed",
+    "Publication Year": 2021,
     "Publication": "https://arxiv.org/abs/2103.03864",
     "Source Code": "https://github.com/microsoft/molecule-generation",
+    "Biomedical Area": [
+        "Any"
+    ],
+    "Target Organism": [
+        "Any"
+    ],
     "License": "MIT",
-    "S3": "https://ersilia-models-zipped.s3.eu-central-1.amazonaws.com/eos633t.zip",
-    "DockerHub": "https://hub.docker.com/r/ersiliaos/eos633t",
-    "Docker Architecture": [
-        "AMD64"
-    ]
+    "Contributor": "miquelduranfrigola",
+    "Incorporation Date": "2025-07-15",
 }
