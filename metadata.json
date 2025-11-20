@@ -9,9 +9,7 @@
     ],
     "Source": "Local",
     "Source Type": "External",
-    "Task": [
-        "Sampling"
-    ],
+    "Task": "Sampling",
     "Subtask": "Generation",
     "Input": [
         "Compound"
