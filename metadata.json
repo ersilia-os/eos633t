@@ -38,6 +38,9 @@
     "License": "MIT",
     "Contributor": "miquelduranfrigola",
     "Incorporation Date": "2023-11-03",
+    "S3": "https://ersilia-models-zipped.s3.eu-central-1.amazonaws.com/eos633t.zip",
+    "Model Size": 32.0,
+    "Environment Size": 2086.0,
     "Output Type": [
         "Compound"
     ]
