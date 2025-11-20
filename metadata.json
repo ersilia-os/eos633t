@@ -18,9 +18,6 @@
     "Output": [
         "Compound"
     ],
-    "Output Type": [
-        "Compound"
-    ],
     "Output Dimension": 100,
     "Output Consistency": "Variable",
     "Interpretation": "1000 new molecules are sampled for each input molecule, preserving its scaffold.",
@@ -28,17 +25,20 @@
         "Chemical graph model",
         "Compound generation"
     ],
-    "Publication Type": "Peer reviewed",
-    "Publication Year": 2021,
-    "Publication": "https://arxiv.org/abs/2103.03864",
-    "Source Code": "https://github.com/microsoft/molecule-generation",
     "Biomedical Area": [
         "Any"
     ],
     "Target Organism": [
         "Any"
     ],
+    "Publication Type": "Peer reviewed",
+    "Publication Year": 2021,
+    "Publication": "https://arxiv.org/abs/2103.03864",
+    "Source Code": "https://github.com/microsoft/molecule-generation",
     "License": "MIT",
     "Contributor": "miquelduranfrigola",
-    "Incorporation Date": "2025-07-15"
+    "Incorporation Date": "2023-11-03",
+    "Output Type": [
+        "Compound"
+    ]
 }
