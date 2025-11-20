@@ -1,7 +1,7 @@
 {
     "Identifier": "eos633t",
     "Slug": "moler-enamine-blocks",
-    "Status": "In maintenance",
+    "Status": "Ready",
     "Title": "Extending molecular scaffolds with building blocks",
     "Description": "MoLeR is a graph-based generative model that combines fragment-based and atom-by-atom generation of new molecules with scaffold-constrained optimization. It does not depend on generation history and therefore MoLeR is able to complete arbitrary scaffolds. The model has been trained on the GuacaMol dataset. Here we sample the 300k building blocks library from Enamine.",
     "Deployment": [
@@ -38,9 +38,19 @@
     "License": "MIT",
     "Contributor": "miquelduranfrigola",
     "Incorporation Date": "2023-11-03",
+    "Last Packaging Date": "2025-11-20",
+    "Release": "v1.0.0",
     "S3": "https://ersilia-models-zipped.s3.eu-central-1.amazonaws.com/eos633t.zip",
+    "DockerHub": "https://hub.docker.com/r/ersiliaos/eos633t",
+    "Docker Architecture": "AMD64",
     "Model Size": 32.0,
     "Environment Size": 2086.0,
+    "Image Size": 2169.44,
+    "Computational Performance 1": 119.37,
+    "Computational Performance 2": 568.99,
+    "Computational Performance 3": -1.0,
+    "Computational Performance 4": -1.0,
+    "Computational Performance 5": -1.0,
     "Output Type": [
         "Compound"
     ]
