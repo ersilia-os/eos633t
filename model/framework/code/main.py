@@ -8,11 +8,10 @@ from molecule_generation.utils.cli_utils import (
 )
 import csv
 import random
+import time
 import numpy as np
 from tqdm import tqdm
 from rdkit import Chem
-from rdkit.Chem import AllChem
-from rdkit import DataStructs
 from rdkit.Chem.Scaffolds import MurckoScaffold
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -23,8 +22,6 @@ BLOCKS_LIST = os.path.join(
 )
 
 N_SAMPLES = 1000
-
-import time
 
 
 def call_with_retries(fn, *, tries=5, sleep_s=10, name="call"):
@@ -71,29 +68,35 @@ def read_smiles(input_file):
   return smiles
 
 
-def tanimoto_calc(smi1, smi2):
-  mol1 = Chem.MolFromSmiles(smi1)
-  mol2 = Chem.MolFromSmiles(smi2)
-  fp1 = AllChem.GetMorganFingerprintAsBitVect(mol1, 3, nBits=2048)
-  fp2 = AllChem.GetMorganFingerprintAsBitVect(mol2, 3, nBits=2048)
-  s = round(DataStructs.TanimotoSimilarity(fp1, fp2), 3)
-  return s
+def encode_scaffolds(model, scaffolds):
+  """Encode with hierarchical fallback: batches of 100 -> 10 -> 1.
+  Returns a list aligned with scaffolds; None at positions that failed."""
+  results = [None] * len(scaffolds)
 
+  def _encode(local_indices):
+    if not local_indices:
+      return
+    chunk = [scaffolds[i] for i in local_indices]
+    n = len(local_indices)
+    try:
+      embs = call_with_retries(
+        lambda: model.encode(chunk), tries=6, sleep_s=5, name=f"encode(n={n})"
+      )
+      for j, i in enumerate(local_indices):
+        results[i] = np.array(embs[j])
+    except Exception as e:
+      if n == 1:
+        print(f"[WARN] encode failed for scaffold {scaffolds[local_indices[0]]!r}: {e}")
+        return
+      next_size = 10 if n > 10 else 1
+      print(f"[WARN] encode(n={n}) failed ({e}), retrying in batches of {next_size}.")
+      for start in range(0, n, next_size):
+        _encode(local_indices[start:start + next_size])
 
-def scaffold_based_sampling(query_scaffold, blocks_list):
-  ROOT = os.path.dirname(os.path.abspath(__file__))
-  model_directory = os.path.abspath(
-    os.path.join(ROOT, "..", "..", "checkpoints", "MODEL_DIR")
-  )
-  with load_model_from_directory(model_directory) as model:
-    row = model.encode([query_scaffold])
-    R = []
-    for _ in range(len(blocks_list)):
-      R += row
-    embeddings = np.array(R)
-    print(embeddings.shape)
-    decoded = model.decode(embeddings, scaffolds=blocks_list)
-  return decoded
+  for start in range(0, len(scaffolds), 100):
+    _encode(list(range(start, min(start + 100, len(scaffolds)))))
+
+  return results
 
 
 def main() -> None:
@@ -107,7 +110,6 @@ def main() -> None:
 
   smiles_list = read_smiles(input_file=input_file)
 
-  ROOT = os.path.dirname(os.path.abspath(__file__))
   model_directory = os.path.abspath(
     os.path.join(ROOT, "..", "..", "checkpoints", "MODEL_DIR")
   )
@@ -115,72 +117,57 @@ def main() -> None:
   def empty_row():
     return [""] * N_SAMPLES
 
-  def safe_scaffold(smi: str):
-    mol = Chem.MolFromSmiles(smi)
-    if mol is None:
-      return None
-    scaff = MurckoScaffold.GetScaffoldForMol(mol)
-    if scaff is None or scaff.GetNumAtoms() == 0:
-      return None
-    return Chem.MolToSmiles(scaff)
+  # Pre-compute scaffolds before opening the model context
+  scaffolds = []
+  for idx, smi in enumerate(smiles_list):
+    scaff = get_murcko_scaffold(smi)
+    if scaff is None:
+      print(f"[WARN] Invalid SMILES or empty scaffold at index {idx}: {smi!r}")
+    scaffolds.append(scaff)
 
-  R = []
+  valid_indices = [i for i, s in enumerate(scaffolds) if s is not None]
+  valid_scaffolds = [scaffolds[i] for i in valid_indices]
+
+  R = [None] * len(smiles_list)
 
   with load_model_from_directory(model_directory) as model:
-    for idx, smi in enumerate(tqdm(smiles_list, desc="Generating")):
+    all_embeddings = encode_scaffolds(model, valid_scaffolds) if valid_scaffolds else []
+
+    for i, idx in enumerate(tqdm(valid_indices, desc="Generating")):
       try:
-        if Chem.MolFromSmiles(smi) is None:
-          print(f"[WARN] Invalid SMILES at index {idx}: {smi!r} -> writing empty row")
-          R.append(empty_row())
+        emb = all_embeddings[i]
+        if emb is None:
+          print(f"[WARN] No embedding for index {idx}: {smiles_list[idx]!r} -> writing empty row")
+          R[idx] = empty_row()
           continue
-
-        scaff = safe_scaffold(smi)
-        if not scaff:
-          print(
-            f"[WARN] Empty/invalid scaffold at index {idx}: {smi!r} -> writing empty row"
-          )
-          R.append(empty_row())
-          continue
-
-        blocks_list_samp = random.sample(blocks_list, N_SAMPLES)
-        row = call_with_retries(
-          lambda: model.encode([scaff]), tries=6, sleep_s=5, name="encode"
-        )
-
-        emb = np.array(row)
-
         if emb.ndim == 1:
           emb = emb.reshape(1, -1)
         embeddings = np.repeat(emb, repeats=N_SAMPLES, axis=0)
+        blocks_list_samp = random.sample(blocks_list, N_SAMPLES)
 
         decoded = call_with_retries(
           lambda: model.decode(embeddings, scaffolds=blocks_list_samp),
-          tries=6,
-          sleep_s=5,
-          name="decode",
+          tries=6, sleep_s=5, name="decode",
         )
+
         if decoded is None:
-          print(
-            f"[WARN] decode returned None at index {idx}: {smi!r} -> writing empty row"
-          )
-          R.append(empty_row())
+          print(f"[WARN] decode returned None at index {idx}: {smiles_list[idx]!r} -> writing empty row")
+          R[idx] = empty_row()
           continue
 
         decoded = list(decoded)
         if len(decoded) != N_SAMPLES:
           print(
-            f"[WARN] decode length mismatch at index {idx}: got {len(decoded)} expected {N_SAMPLES} "
-            f"-> padding/truncating"
+            f"[WARN] decode length mismatch at index {idx}: got {len(decoded)} "
+            f"expected {N_SAMPLES} -> padding/truncating"
           )
           decoded = (decoded + [""] * N_SAMPLES)[:N_SAMPLES]
 
-        R.append(decoded)
+        R[idx] = decoded
 
       except Exception as e:
-        print(
-          f"[ERROR] Failed at index {idx} for SMILES {smi!r}: {type(e).__name__}: {e}"
-        )
-        R.append(empty_row())
+        print(f"[ERROR] Failed at index {idx} for SMILES {smiles_list[idx]!r}: {type(e).__name__}: {e}")
+        R[idx] = empty_row()
 
   with open(output_file, "w", newline="") as f:
     writer = csv.writer(f)
