@@ -18,7 +18,7 @@
     "Output": [
         "Compound"
     ],
-    "Output Dimension": 100,
+    "Output Dimension": 1000,
     "Output Consistency": "Variable",
     "Interpretation": "1000 new molecules are sampled for each input molecule, preserving its scaffold.",
     "Tag": [
