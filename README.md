@@ -21,7 +21,7 @@ This model was incorporated on 2023-11-03.Last packaged on 2026-02-05.
 - **Input Dimension:** `1`
 
 ### Output
-- **Output Dimension:** `100`
+- **Output Dimension:** `1000`
 - **Output Consistency:** `Variable`
 - **Interpretation:** 1000 new molecules are sampled for each input molecule, preserving its scaffold.
 
