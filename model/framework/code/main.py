@@ -1,8 +1,5 @@
 import os
 import sys
-import concurrent.futures
-
-os.environ.setdefault("GUNICORN_CMD_ARGS", "--timeout=3600")
 
 from molecule_generation import load_model_from_directory
 from molecule_generation.utils.cli_utils import (
@@ -27,10 +24,9 @@ MODEL_DIR = os.path.abspath(
 )
 
 N_SAMPLES = 1000
-PER_MOL_TIMEOUT = 300  # seconds; safety net for hanging decode calls
 
 
-def get_murcko_scaffold(smiles: str):
+def get_murcko_scaffold(smiles):
   mol = Chem.MolFromSmiles(smiles)
   if mol is None:
     return None
@@ -60,14 +56,11 @@ def read_smiles(input_file):
   return smiles
 
 
-def decode_molecule(scaff, blocks_list_samp):
+def scaffold_based_sampling(scaff, blocks_list_samp):
   # Model loaded per-call so TF releases memory on context exit — prevents OOM at large batch sizes.
   with load_model_from_directory(MODEL_DIR) as model:
-    embs = model.encode([scaff])
-    emb = np.array(embs[0])
-    if emb.ndim == 1:
-      emb = emb.reshape(1, -1)
-    embeddings = np.repeat(emb, repeats=N_SAMPLES, axis=0)
+    row = model.encode([scaff])
+    embeddings = np.array(row * N_SAMPLES)
     decoded = model.decode(embeddings, scaffolds=blocks_list_samp)
   return list(decoded) if decoded is not None else []
 
@@ -97,18 +90,12 @@ def main() -> None:
 
     blocks_list_samp = random.sample(blocks_list, N_SAMPLES)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-      future = executor.submit(decode_molecule, scaff, blocks_list_samp)
-      try:
-        result = future.result(timeout=PER_MOL_TIMEOUT)
-      except concurrent.futures.TimeoutError:
-        print(f"[WARN] decode timed out after {PER_MOL_TIMEOUT}s at index {idx}: {smi!r}")
-        R[idx] = empty_row()
-        continue
-      except Exception as e:
-        print(f"[ERROR] at index {idx} for {smi!r}: {type(e).__name__}: {e}")
-        R[idx] = empty_row()
-        continue
+    try:
+      result = scaffold_based_sampling(scaff, blocks_list_samp)
+    except Exception as e:
+      print(f"[ERROR] at index {idx} for {smi!r}: {type(e).__name__}: {e}")
+      R[idx] = empty_row()
+      continue
 
     result = (result + [""] * N_SAMPLES)[:N_SAMPLES]
     R[idx] = result
