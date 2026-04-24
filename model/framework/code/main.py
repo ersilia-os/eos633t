@@ -1,5 +1,8 @@
 import os
 import sys
+import concurrent.futures
+
+os.environ.setdefault("GUNICORN_CMD_ARGS", "--timeout=3600")
 
 from molecule_generation import load_model_from_directory
 from molecule_generation.utils.cli_utils import (
@@ -145,10 +148,19 @@ def main() -> None:
         embeddings = np.repeat(emb, repeats=N_SAMPLES, axis=0)
         blocks_list_samp = random.sample(blocks_list, N_SAMPLES)
 
-        decoded = call_with_retries(
-          lambda: model.decode(embeddings, scaffolds=blocks_list_samp),
-          tries=6, sleep_s=5, name="decode",
-        )
+        PER_MOL_TIMEOUT = 300  # seconds; avoids hanging the BentoML worker indefinitely
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+          future = executor.submit(
+            call_with_retries,
+            lambda: model.decode(embeddings, scaffolds=blocks_list_samp),
+            tries=6, sleep_s=5, name="decode",
+          )
+          try:
+            decoded = future.result(timeout=PER_MOL_TIMEOUT)
+          except concurrent.futures.TimeoutError:
+            print(f"[WARN] decode timed out after {PER_MOL_TIMEOUT}s at index {idx}: {smiles_list[idx]!r} -> writing empty row")
+            R[idx] = empty_row()
+            continue
 
         if decoded is None:
           print(f"[WARN] decode returned None at index {idx}: {smiles_list[idx]!r} -> writing empty row")
