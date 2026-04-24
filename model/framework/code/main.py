@@ -11,7 +11,6 @@ from molecule_generation.utils.cli_utils import (
 )
 import csv
 import random
-import time
 import numpy as np
 from tqdm import tqdm
 from rdkit import Chem
@@ -23,22 +22,12 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 BLOCKS_LIST = os.path.join(
   ROOT, "..", "..", "checkpoints", "fragments_from_enamine.smi"
 )
+MODEL_DIR = os.path.abspath(
+  os.path.join(ROOT, "..", "..", "checkpoints", "MODEL_DIR")
+)
 
 N_SAMPLES = 1000
-
-
-def call_with_retries(fn, *, tries=5, sleep_s=10, name="call"):
-  last_err = None
-  for i in range(tries):
-    try:
-      return fn()
-    except RuntimeError as e:
-      last_err = e
-      print(
-        f"[WARN] {name} failed (attempt {i + 1}/{tries}): {e}. Sleeping {sleep_s}s..."
-      )
-      time.sleep(sleep_s)
-  raise last_err
+PER_MOL_TIMEOUT = 300  # seconds; safety net for hanging decode calls
 
 
 def get_murcko_scaffold(smiles: str):
@@ -71,35 +60,16 @@ def read_smiles(input_file):
   return smiles
 
 
-def encode_scaffolds(model, scaffolds):
-  """Encode with hierarchical fallback: batches of 100 -> 10 -> 1.
-  Returns a list aligned with scaffolds; None at positions that failed."""
-  results = [None] * len(scaffolds)
-
-  def _encode(local_indices):
-    if not local_indices:
-      return
-    chunk = [scaffolds[i] for i in local_indices]
-    n = len(local_indices)
-    try:
-      embs = call_with_retries(
-        lambda: model.encode(chunk), tries=6, sleep_s=5, name=f"encode(n={n})"
-      )
-      for j, i in enumerate(local_indices):
-        results[i] = np.array(embs[j])
-    except Exception as e:
-      if n == 1:
-        print(f"[WARN] encode failed for scaffold {scaffolds[local_indices[0]]!r}: {e}")
-        return
-      next_size = 10 if n > 10 else 1
-      print(f"[WARN] encode(n={n}) failed ({e}), retrying in batches of {next_size}.")
-      for start in range(0, n, next_size):
-        _encode(local_indices[start:start + next_size])
-
-  for start in range(0, len(scaffolds), 100):
-    _encode(list(range(start, min(start + 100, len(scaffolds)))))
-
-  return results
+def decode_molecule(scaff, blocks_list_samp):
+  # Model loaded per-call so TF releases memory on context exit — prevents OOM at large batch sizes.
+  with load_model_from_directory(MODEL_DIR) as model:
+    embs = model.encode([scaff])
+    emb = np.array(embs[0])
+    if emb.ndim == 1:
+      emb = emb.reshape(1, -1)
+    embeddings = np.repeat(emb, repeats=N_SAMPLES, axis=0)
+    decoded = model.decode(embeddings, scaffolds=blocks_list_samp)
+  return list(decoded) if decoded is not None else []
 
 
 def main() -> None:
@@ -113,73 +83,35 @@ def main() -> None:
 
   smiles_list = read_smiles(input_file=input_file)
 
-  model_directory = os.path.abspath(
-    os.path.join(ROOT, "..", "..", "checkpoints", "MODEL_DIR")
-  )
-
   def empty_row():
     return [""] * N_SAMPLES
 
-  # Pre-compute scaffolds before opening the model context
-  scaffolds = []
-  for idx, smi in enumerate(smiles_list):
+  R = [None] * len(smiles_list)
+
+  for idx, smi in enumerate(tqdm(smiles_list, desc="Generating")):
     scaff = get_murcko_scaffold(smi)
     if scaff is None:
       print(f"[WARN] Invalid SMILES or empty scaffold at index {idx}: {smi!r}")
-    scaffolds.append(scaff)
+      R[idx] = empty_row()
+      continue
 
-  valid_indices = [i for i, s in enumerate(scaffolds) if s is not None]
-  valid_scaffolds = [scaffolds[i] for i in valid_indices]
+    blocks_list_samp = random.sample(blocks_list, N_SAMPLES)
 
-  R = [None] * len(smiles_list)
-
-  with load_model_from_directory(model_directory) as model:
-    all_embeddings = encode_scaffolds(model, valid_scaffolds) if valid_scaffolds else []
-
-    for i, idx in enumerate(tqdm(valid_indices, desc="Generating")):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+      future = executor.submit(decode_molecule, scaff, blocks_list_samp)
       try:
-        emb = all_embeddings[i]
-        if emb is None:
-          print(f"[WARN] No embedding for index {idx}: {smiles_list[idx]!r} -> writing empty row")
-          R[idx] = empty_row()
-          continue
-        if emb.ndim == 1:
-          emb = emb.reshape(1, -1)
-        embeddings = np.repeat(emb, repeats=N_SAMPLES, axis=0)
-        blocks_list_samp = random.sample(blocks_list, N_SAMPLES)
-
-        PER_MOL_TIMEOUT = 300  # seconds; avoids hanging the BentoML worker indefinitely
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-          future = executor.submit(
-            call_with_retries,
-            lambda: model.decode(embeddings, scaffolds=blocks_list_samp),
-            tries=6, sleep_s=5, name="decode",
-          )
-          try:
-            decoded = future.result(timeout=PER_MOL_TIMEOUT)
-          except concurrent.futures.TimeoutError:
-            print(f"[WARN] decode timed out after {PER_MOL_TIMEOUT}s at index {idx}: {smiles_list[idx]!r} -> writing empty row")
-            R[idx] = empty_row()
-            continue
-
-        if decoded is None:
-          print(f"[WARN] decode returned None at index {idx}: {smiles_list[idx]!r} -> writing empty row")
-          R[idx] = empty_row()
-          continue
-
-        decoded = list(decoded)
-        if len(decoded) != N_SAMPLES:
-          print(
-            f"[WARN] decode length mismatch at index {idx}: got {len(decoded)} "
-            f"expected {N_SAMPLES} -> padding/truncating"
-          )
-          decoded = (decoded + [""] * N_SAMPLES)[:N_SAMPLES]
-
-        R[idx] = decoded
-
-      except Exception as e:
-        print(f"[ERROR] Failed at index {idx} for SMILES {smiles_list[idx]!r}: {type(e).__name__}: {e}")
+        result = future.result(timeout=PER_MOL_TIMEOUT)
+      except concurrent.futures.TimeoutError:
+        print(f"[WARN] decode timed out after {PER_MOL_TIMEOUT}s at index {idx}: {smi!r}")
         R[idx] = empty_row()
+        continue
+      except Exception as e:
+        print(f"[ERROR] at index {idx} for {smi!r}: {type(e).__name__}: {e}")
+        R[idx] = empty_row()
+        continue
+
+    result = (result + [""] * N_SAMPLES)[:N_SAMPLES]
+    R[idx] = result
 
   with open(output_file, "w", newline="") as f:
     writer = csv.writer(f)
