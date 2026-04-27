@@ -1,3 +1,4 @@
 smiles
-CCCCN(CCCC)CCCOc1ccc(cc1)C(=O)c1c(CCCC)oc2ccc(NS(C)(=O)=O)cc12
-C[n+]1c2cc(N)ccc2cc2ccc(N)cc12
+O=C(NCCCN1CCC2(CC1)OCc1ccccc21)[C@H]1CCCN1Cc1ccccc1
+Cc1nc2ccc(cc2[nH]1)-n1ncc(C(=O)c2cc3ccccc3[nH]2)c1N
+OC(=O)[C@@H]1C[C@H]2C[C@@H](CCc3nn[nH]n3)CC[C@H]2CN1
