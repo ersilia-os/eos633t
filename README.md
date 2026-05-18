@@ -59,7 +59,7 @@ _10 of 1000 columns are shown_
 
 ### References
 - **Source Code**: [https://github.com/microsoft/molecule-generation](https://github.com/microsoft/molecule-generation)
-- **Publication**: [https://arxiv.org/abs/2103.03864](https://arxiv.org/abs/2103.03864)
+- **Publication**: [https://doi.org/10.48550/arXiv.2103.03864](https://doi.org/10.48550/arXiv.2103.03864)
 - **Publication Type:** `Peer reviewed`
 - **Publication Year:** `2021`
 - **Ersilia Contributor:** [miquelduranfrigola](https://github.com/miquelduranfrigola)
