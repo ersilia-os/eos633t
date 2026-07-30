@@ -88,7 +88,7 @@ def main() -> None:
       R[idx] = empty_row()
       continue
 
-    max_retries = 3
+    max_retries = 10
     result = []
     for attempt in range(max_retries):
       blocks_list_samp = random.sample(blocks_list, N_SAMPLES)
