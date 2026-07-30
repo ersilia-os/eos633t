@@ -88,14 +88,25 @@ def main() -> None:
       R[idx] = empty_row()
       continue
 
-    blocks_list_samp = random.sample(blocks_list, N_SAMPLES)
-
-    try:
-      result = scaffold_based_sampling(scaff, blocks_list_samp)
-    except Exception as e:
-      print(f"[ERROR] at index {idx} for {smi!r}: {type(e).__name__}: {e}")
-      R[idx] = empty_row()
-      continue
+    max_retries = 3
+    result = []
+    for attempt in range(max_retries):
+      blocks_list_samp = random.sample(blocks_list, N_SAMPLES)
+      try:
+        result = scaffold_based_sampling(scaff, blocks_list_samp)
+      except Exception as e:
+        print(
+          f"[ERROR] at index {idx} for {smi!r} (attempt {attempt + 1}/{max_retries}): "
+          f"{type(e).__name__}: {e}"
+        )
+        result = []
+      if result:
+        break
+      if attempt < max_retries - 1:
+        print(
+          f"[WARN] Empty result at index {idx} for {smi!r}, "
+          f"retrying (attempt {attempt + 1}/{max_retries})"
+        )
 
     result = (result + [""] * N_SAMPLES)[:N_SAMPLES]
     R[idx] = result
