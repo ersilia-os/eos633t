@@ -1,6 +1,6 @@
 # Extending molecular scaffolds with building blocks
 
-Grows a molecule outward from a starting scaffold by attaching chemically sensible fragments, returning up to 1,000 elaborated structures. Maziarz and colleagues built the generator around structural motifs rather than single atoms, so that each step adds a complete ring or functional group and intermediate states stay valid. Training used a large corpus of drug-like molecules to learn which motifs plausibly follow which. Sampling is stochastic, and generated compounds still require assessment for novelty and synthetic accessibility.
+MoLeR is a graph-based generative model that combines fragment-based and atom-by-atom generation of new molecules with scaffold-constrained optimization. It does not depend on generation history and therefore MoLeR is able to complete arbitrary scaffolds. The model has been trained on the GuacaMol dataset. Here we sample the 300k building blocks library from Enamine.
 
 This model was incorporated on 2023-11-03.Last packaged on 2026-07-30.
 
@@ -23,7 +23,7 @@ This model was incorporated on 2023-11-03.Last packaged on 2026-07-30.
 ### Output
 - **Output Dimension:** `1000`
 - **Output Consistency:** `Variable`
-- **Interpretation:** Up to 1000 generated molecules produced by extending the input scaffold with structural motifs.
+- **Interpretation:** 1000 new molecules are sampled for each input molecule, preserving its scaffold.
 
 Below are the **Output Columns** of the model:
 | Name | Type | Direction | Description |
