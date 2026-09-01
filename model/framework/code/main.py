@@ -113,7 +113,7 @@ def main() -> None:
 
   with open(output_file, "w", newline="") as f:
     writer = csv.writer(f)
-    header = [f"smiles_{str(i).zfill(3)}" for i in range(N_SAMPLES)]
+    header = [f"smi_{str(i).zfill(3)}" for i in range(N_SAMPLES)]
     writer.writerow(header)
     for row in R:
       if row is None:
