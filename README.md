@@ -28,16 +28,16 @@ This model was incorporated on 2023-11-03.Last packaged on 2026-07-30.
 Below are the **Output Columns** of the model:
 | Name | Type | Direction | Description |
 |------|------|-----------|-------------|
-| smiles_000 | string |  | Generated compound index 0 using MoLeR and Enamine building blocks |
-| smiles_001 | string |  | Generated compound index 1 using MoLeR and Enamine building blocks |
-| smiles_002 | string |  | Generated compound index 2 using MoLeR and Enamine building blocks |
-| smiles_003 | string |  | Generated compound index 3 using MoLeR and Enamine building blocks |
-| smiles_004 | string |  | Generated compound index 4 using MoLeR and Enamine building blocks |
-| smiles_005 | string |  | Generated compound index 5 using MoLeR and Enamine building blocks |
-| smiles_006 | string |  | Generated compound index 6 using MoLeR and Enamine building blocks |
-| smiles_007 | string |  | Generated compound index 7 using MoLeR and Enamine building blocks |
-| smiles_008 | string |  | Generated compound index 8 using MoLeR and Enamine building blocks |
-| smiles_009 | string |  | Generated compound index 9 using MoLeR and Enamine building blocks |
+| smi_000 | string |  | Generated compound index 0 using MoLeR and Enamine building blocks |
+| smi_001 | string |  | Generated compound index 1 using MoLeR and Enamine building blocks |
+| smi_002 | string |  | Generated compound index 2 using MoLeR and Enamine building blocks |
+| smi_003 | string |  | Generated compound index 3 using MoLeR and Enamine building blocks |
+| smi_004 | string |  | Generated compound index 4 using MoLeR and Enamine building blocks |
+| smi_005 | string |  | Generated compound index 5 using MoLeR and Enamine building blocks |
+| smi_006 | string |  | Generated compound index 6 using MoLeR and Enamine building blocks |
+| smi_007 | string |  | Generated compound index 7 using MoLeR and Enamine building blocks |
+| smi_008 | string |  | Generated compound index 8 using MoLeR and Enamine building blocks |
+| smi_009 | string |  | Generated compound index 9 using MoLeR and Enamine building blocks |
 
 _10 of 1000 columns are shown_
 ### Source and Deployment
