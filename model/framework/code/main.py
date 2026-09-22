@@ -8,7 +8,6 @@ from molecule_generation.utils.cli_utils import (
 )
 import csv
 import random
-import numpy as np
 from tqdm import tqdm
 from rdkit import Chem
 from rdkit.Chem.Scaffolds import MurckoScaffold
@@ -56,12 +55,14 @@ def read_smiles(input_file):
   return smiles
 
 
-def scaffold_based_sampling(scaff, blocks_list_samp):
+def scaffold_based_sampling(scaff, blocks_list_samp, seed):
   # Model loaded per-call so TF releases memory on context exit — prevents OOM at large batch sizes.
-  with load_model_from_directory(MODEL_DIR) as model:
-    row = model.encode([scaff])
-    embeddings = np.array(row * N_SAMPLES)
-    decoded = model.decode(embeddings, scaffolds=blocks_list_samp)
+  # `seed` is drawn from our own RNG (not left at the library's default) because
+  # ModelWrapper resets Python/NumPy/TF random state on every load; leaving it at the
+  # default would make every call after the first draw identical block samples.
+  with load_model_from_directory(MODEL_DIR, seed=seed) as model:
+    embeddings = model.encode(blocks_list_samp)
+    decoded = model.decode(embeddings, scaffolds=[scaff] * len(blocks_list_samp))
   return list(decoded) if decoded is not None else []
 
 
@@ -75,6 +76,11 @@ def main() -> None:
   output_file = sys.argv[2]
 
   smiles_list = read_smiles(input_file=input_file)
+
+  # Our own RNG instance, independent of the global `random` module — ModelWrapper
+  # resets the global module's seed to a fixed value on every model load, which would
+  # otherwise make this sampling collapse to the same draw after the first compound.
+  rng = random.Random()
 
   def empty_row():
     return [""] * N_SAMPLES
@@ -91,9 +97,10 @@ def main() -> None:
     max_retries = 10
     result = []
     for attempt in range(max_retries):
-      blocks_list_samp = random.sample(blocks_list, N_SAMPLES)
+      blocks_list_samp = rng.sample(blocks_list, N_SAMPLES)
+      seed = rng.randint(1, 99999)
       try:
-        result = scaffold_based_sampling(scaff, blocks_list_samp)
+        result = scaffold_based_sampling(scaff, blocks_list_samp, seed)
       except Exception as e:
         print(
           f"[ERROR] at index {idx} for {smi!r} (attempt {attempt + 1}/{max_retries}): "
