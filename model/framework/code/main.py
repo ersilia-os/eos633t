@@ -55,13 +55,26 @@ def read_smiles(input_file):
   return smiles
 
 
-def scaffold_based_sampling(scaff, blocks_list, seed, target=N_SAMPLES, max_rounds=5):
+def scaffold_based_sampling(
+  scaff, blocks_list, seed, target=N_SAMPLES, max_rounds=5, exclude_smiles=None
+):
   # Model loaded once per compound (not once for the whole run, and not once per round) —
   # TF releases memory when this context exits, avoiding the memory-accumulation OOM
   # previously fixed in c72c312. A single encode/decode round returns heavily duplicated
   # molecules (confirmed: median 75% unique, worst case 28% unique on this model's
   # 100-compound benchmark) — draw fresh non-overlapping fragment batches across multiple
   # rounds, deduping via canonical SMILES, until `target` unique molecules are collected.
+  #
+  # `exclude_smiles` is the input molecule: it must never be returned as one of its own
+  # "generated" outputs. Compared without stereochemistry on purpose — the decoder mostly
+  # emits stereo-free SMILES, so an exact isomeric match would miss most echoes of an
+  # input that carries stereocenters.
+  exclude_flat = None
+  if exclude_smiles:
+    exclude_mol = Chem.MolFromSmiles(exclude_smiles)
+    if exclude_mol is not None:
+      exclude_flat = Chem.MolToSmiles(exclude_mol, isomericSmiles=False)
+
   local_rng = random.Random(seed)
   pool = list(blocks_list)
   local_rng.shuffle(pool)
@@ -83,6 +96,8 @@ def scaffold_based_sampling(scaff, blocks_list, seed, target=N_SAMPLES, max_roun
           continue
         mol = Chem.MolFromSmiles(o)
         if mol is None:
+          continue
+        if exclude_flat is not None and Chem.MolToSmiles(mol, isomericSmiles=False) == exclude_flat:
           continue
         key = Chem.MolToSmiles(mol)
         if key in seen:
@@ -128,7 +143,7 @@ def main() -> None:
     for attempt in range(max_retries):
       seed = rng.randint(1, 99999)
       try:
-        result = scaffold_based_sampling(scaff, blocks_list, seed)
+        result = scaffold_based_sampling(scaff, blocks_list, seed, exclude_smiles=smi)
       except Exception as e:
         print(
           f"[ERROR] at index {idx} for {smi!r} (attempt {attempt + 1}/{max_retries}): "
