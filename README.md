@@ -21,25 +21,25 @@ This model was incorporated on 2023-11-03.Last packaged on 2026-09-28.
 - **Input Dimension:** `1`
 
 ### Output
-- **Output Dimension:** `1000`
+- **Output Dimension:** `100`
 - **Output Consistency:** `Variable`
-- **Interpretation:** 1000 new molecules are sampled for each input molecule, preserving its scaffold.
+- **Interpretation:** Up to 100 new molecules are sampled for each input molecule, preserving its scaffold.
 
 Below are the **Output Columns** of the model:
 | Name | Type | Direction | Description |
 |------|------|-----------|-------------|
-| smi_000 | string |  | Generated compound index 0 using MoLeR and Enamine building blocks |
-| smi_001 | string |  | Generated compound index 1 using MoLeR and Enamine building blocks |
-| smi_002 | string |  | Generated compound index 2 using MoLeR and Enamine building blocks |
-| smi_003 | string |  | Generated compound index 3 using MoLeR and Enamine building blocks |
-| smi_004 | string |  | Generated compound index 4 using MoLeR and Enamine building blocks |
-| smi_005 | string |  | Generated compound index 5 using MoLeR and Enamine building blocks |
-| smi_006 | string |  | Generated compound index 6 using MoLeR and Enamine building blocks |
-| smi_007 | string |  | Generated compound index 7 using MoLeR and Enamine building blocks |
-| smi_008 | string |  | Generated compound index 8 using MoLeR and Enamine building blocks |
-| smi_009 | string |  | Generated compound index 9 using MoLeR and Enamine building blocks |
+| smi_00 | string |  | Generated compound index 0 using MoLeR and Enamine building blocks |
+| smi_01 | string |  | Generated compound index 1 using MoLeR and Enamine building blocks |
+| smi_02 | string |  | Generated compound index 2 using MoLeR and Enamine building blocks |
+| smi_03 | string |  | Generated compound index 3 using MoLeR and Enamine building blocks |
+| smi_04 | string |  | Generated compound index 4 using MoLeR and Enamine building blocks |
+| smi_05 | string |  | Generated compound index 5 using MoLeR and Enamine building blocks |
+| smi_06 | string |  | Generated compound index 6 using MoLeR and Enamine building blocks |
+| smi_07 | string |  | Generated compound index 7 using MoLeR and Enamine building blocks |
+| smi_08 | string |  | Generated compound index 8 using MoLeR and Enamine building blocks |
+| smi_09 | string |  | Generated compound index 9 using MoLeR and Enamine building blocks |
 
-_10 of 1000 columns are shown_
+_10 of 100 columns are shown_
 ### Source and Deployment
 - **Source:** `Local`
 - **Source Type:** `External`
