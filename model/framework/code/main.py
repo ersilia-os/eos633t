@@ -22,7 +22,7 @@ MODEL_DIR = os.path.abspath(
   os.path.join(ROOT, "..", "..", "checkpoints", "MODEL_DIR")
 )
 
-N_SAMPLES = 1000
+N_SAMPLES = 100
 
 
 def get_murcko_scaffold(smiles):
@@ -163,7 +163,7 @@ def main() -> None:
 
   with open(output_file, "w", newline="") as f:
     writer = csv.writer(f)
-    header = [f"smi_{str(i).zfill(3)}" for i in range(N_SAMPLES)]
+    header = [f"smi_{str(i).zfill(2)}" for i in range(N_SAMPLES)]
     writer.writerow(header)
     for row in R:
       if row is None:

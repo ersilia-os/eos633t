@@ -18,9 +18,9 @@
     "Output": [
         "Compound"
     ],
-    "Output Dimension": 1000,
+    "Output Dimension": 100,
     "Output Consistency": "Variable",
-    "Interpretation": "1000 new molecules are sampled for each input molecule, preserving its scaffold.",
+    "Interpretation": "Up to 100 new molecules are sampled for each input molecule, preserving its scaffold.",
     "Tag": [
         "Chemical graph model",
         "Compound generation"
