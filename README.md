@@ -2,7 +2,7 @@
 
 MoLeR, a graph-based variational autoencoder from Microsoft Research and Novartis, extends a fixed scaffold with whole structural motifs rather than single atoms, so partially built molecules stay chemically sensible, and because generation is never conditioned on its own history it can complete arbitrary scaffolds. Training used GuacaMols roughly 1.5 million drug-like molecules. Ersilia takes the Murcko scaffold of the input and decodes latent codes drawn from Enamines 254k building-block library onto it, returning up to 100 distinct molecules. Sampling is unseeded, so repeated runs differ.
 
-This model was incorporated on 2023-11-03.Last packaged on 2026-09-29.
+This model was incorporated on 2023-11-03.Last packaged on 2026-10-23.
 
 ## Information
 ### Identifiers
@@ -50,11 +50,11 @@ _10 of 100 columns are shown_
 ### Resource Consumption
 - **Model Size (Mb):** `33`
 - **Environment Size (Mb):** `2094`
-- **Image Size (Mb):** `2181.22`
+- **Image Size (Mb):** `2188.38`
 
 **Computational Performance (seconds):**
-- 10 inputs: `38.1`
-- 100 inputs: `1341.74`
+- 10 inputs: `42.35`
+- 100 inputs: `1653.18`
 - 10000 inputs: `-1`
 
 ### References
