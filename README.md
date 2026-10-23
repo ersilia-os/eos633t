@@ -1,6 +1,6 @@
 # Extending molecular scaffolds with building blocks
 
-MoLeR, a graph-based variational autoencoder from Microsoft Research and Novartis, extends a fixed scaffold with whole structural motifs rather than single atoms, so partially built molecules stay chemically sensible, and because generation is never conditioned on its own history it can complete arbitrary scaffolds. Training used GuacaMol's roughly 1.5 million drug-like molecules. Ersilia takes the Murcko scaffold of the input and decodes latent codes drawn from Enamine's 254k building-block library onto it, returning up to 100 distinct molecules. Sampling is unseeded, so repeated runs differ.
+MoLeR, a graph-based variational autoencoder from Microsoft Research and Novartis, extends a fixed scaffold with whole structural motifs rather than single atoms, so partially built molecules stay chemically sensible, and because generation is never conditioned on its own history it can complete arbitrary scaffolds. Training used GuacaMols roughly 1.5 million drug-like molecules. Ersilia takes the Murcko scaffold of the input and decodes latent codes drawn from Enamines 254k building-block library onto it, returning up to 100 distinct molecules. Sampling is unseeded, so repeated runs differ.
 
 This model was incorporated on 2023-11-03.Last packaged on 2026-09-29.
 
