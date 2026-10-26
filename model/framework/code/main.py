@@ -9,7 +9,8 @@ from molecule_generation.utils.cli_utils import (
 import csv
 import random
 from tqdm import tqdm
-from rdkit import Chem
+from rdkit import Chem, DataStructs
+from rdkit.Chem import rdFingerprintGenerator
 from rdkit.Chem.Scaffolds import MurckoScaffold
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -110,6 +111,25 @@ def scaffold_based_sampling(
   return results[:target]
 
 
+def sort_by_similarity(input_smiles, outputs):
+  # Most similar to the input first: Tanimoto on Morgan fingerprints (radius 2, 2048 bits)
+  # between each output and the whole input. Ties break on the SMILES so the order is
+  # reproducible. MoLeR returns the molecules in decoding order, which carries no meaning.
+  input_mol = Chem.MolFromSmiles(input_smiles)
+  if input_mol is None:
+    return outputs
+  gen = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
+  input_fp = gen.GetFingerprint(input_mol)
+
+  def similarity(smiles):
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+      return -1.0
+    return DataStructs.TanimotoSimilarity(input_fp, gen.GetFingerprint(mol))
+
+  return [s for _, s in sorted(((similarity(s), s) for s in outputs), key=lambda x: (-x[0], x[1]))]
+
+
 def main() -> None:
   supress_tensorflow_warnings()
   setup_logging()
@@ -157,6 +177,12 @@ def main() -> None:
           f"[WARN] Empty result at index {idx} for {smi!r}, "
           f"retrying (attempt {attempt + 1}/{max_retries})"
         )
+
+    try:
+      result = sort_by_similarity(smi, result)
+    except Exception as e:
+      # an ordering problem must never cost the row itself
+      print(f"[WARN] could not sort the outputs at index {idx} for {smi!r}: {type(e).__name__}: {e}")
 
     result = (result + [""] * N_SAMPLES)[:N_SAMPLES]
     R[idx] = result

@@ -23,7 +23,7 @@ This model was incorporated on 2023-11-03.Last packaged on 2026-10-26.
 ### Output
 - **Output Dimension:** `100`
 - **Output Consistency:** `Variable`
-- **Interpretation:** Up to 100 molecules built around the inputs scaffold by MoLeR, steered by Enamine building-block latent codes.
+- **Interpretation:** Up to 100 molecules built around the input's scaffold by MoLeR, steered by Enamine building-block latent codes, most similar to the input first.
 
 Below are the **Output Columns** of the model:
 | Name | Type | Direction | Description |
