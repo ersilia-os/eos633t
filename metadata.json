@@ -20,7 +20,7 @@
     ],
     "Output Dimension": 100,
     "Output Consistency": "Variable",
-    "Interpretation": "Up to 100 molecules built around the input's scaffold by MoLeR, steered by Enamine building-block latent codes, most similar to the input first.",
+    "Interpretation": "Up to 100 molecules built around the inputs scaffold by MoLeR, steered by Enamine building-block latent codes, most similar to the input first.",
     "Tag": [
         "Chemical graph model",
         "Compound generation"
