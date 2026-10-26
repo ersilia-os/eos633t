@@ -1,6 +1,6 @@
 # Scaffold-based generation with MoLeR
 
-MoLeR, a graph-based variational autoencoder from Microsoft Research and Novartis, builds molecules motif by motif from a starting scaffold and was trained on GuacaMol's about 1.5 million drug-like molecules. Ersilia keeps only the Murcko scaffold of the input, discarding its side chains, and decodes onto it the latent codes of random molecules from Enamine's 254k building-block library; the blocks steer the decoder and are not attached. Up to 100 distinct molecules come back, nearly all containing the scaffold and often adding rings. Acyclic inputs return nothing. Unseeded, so runs differ.
+MoLeR, a graph-based variational autoencoder from Microsoft Research and Novartis, builds molecules motif by motif from a starting scaffold and was trained on GuacaMols about 1.5 million drug-like molecules. Ersilia keeps only the Murcko scaffold of the input, discarding its side chains, and decodes onto it the latent codes of random molecules from Enamines 254k building-block library; the blocks steer the decoder and are not attached. Up to 100 distinct molecules come back, nearly all containing the scaffold and often adding rings. Acyclic inputs return nothing. Unseeded, so runs differ.
 
 This model was incorporated on 2023-11-03.Last packaged on 2026-10-23.
 
@@ -23,7 +23,7 @@ This model was incorporated on 2023-11-03.Last packaged on 2026-10-23.
 ### Output
 - **Output Dimension:** `100`
 - **Output Consistency:** `Variable`
-- **Interpretation:** Up to 100 molecules built around the input's scaffold by MoLeR, steered by Enamine building-block latent codes.
+- **Interpretation:** Up to 100 molecules built around the inputs scaffold by MoLeR, steered by Enamine building-block latent codes.
 
 Below are the **Output Columns** of the model:
 | Name | Type | Direction | Description |
