@@ -2,7 +2,8 @@
 
 MoLeR, a graph-based variational autoencoder from Microsoft Research and Novartis, builds molecules motif by motif from a starting scaffold and was trained on GuacaMols about 1.5 million drug-like molecules. Ersilia keeps only the Murcko scaffold of the input, discarding its side chains, and decodes onto it the latent codes of random molecules from Enamines 254k building-block library; the blocks steer the decoder and are not attached. Up to 100 distinct molecules come back, nearly all containing the scaffold and often adding rings. Acyclic inputs return nothing. Unseeded, so runs differ.
 
-This model was incorporated on 2023-11-03.Last packaged on 2026-10-26.
+This model was incorporated on 2023-11-03.
+Last packaged on 2026-10-26.
 
 ## Information
 ### Identifiers
@@ -46,6 +47,7 @@ _10 of 100 columns are shown_
 - **DockerHub**: [https://hub.docker.com/r/ersiliaos/eos633t](https://hub.docker.com/r/ersiliaos/eos633t)
 - **Docker Architecture:** `AMD64`
 - **S3 Storage**: [https://ersilia-models-zipped.s3.eu-central-1.amazonaws.com/eos633t.zip](https://ersilia-models-zipped.s3.eu-central-1.amazonaws.com/eos633t.zip)
+- **Apptainer**: [https://models-sif.s3.eu-north-1.amazonaws.com/eos633t_v5.sif](https://models-sif.s3.eu-north-1.amazonaws.com/eos633t_v5.sif)
 
 ### Resource Consumption
 - **Model Size (Mb):** `33`
